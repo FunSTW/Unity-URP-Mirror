@@ -51,7 +51,7 @@ namespace FunS
             set => m_screenScaleFactor = Mathf.Clamp(value, 0.1f, 1.0f);
             get => m_screenScaleFactor;
         }
-        public Vector2Int RenderSize 
+        public Vector2Int RenderSize
         {
             get => new Vector2Int(m_leftReflectionRenderTexture.width, m_leftReflectionRenderTexture.height);
         }
@@ -68,7 +68,6 @@ namespace FunS
             while (CalculateScreenSize().x == 0) yield return null;
 
             m_refPlaneMaterial = m_refPlane.material;
-            m_refPlaneMaterial.name = transform.parent.name;
             m_refPlaneTrans = m_refPlane.transform;
             m_screenScaleFactorTemp = m_screenScaleFactor;
             CreateReflectionCamera();
@@ -113,8 +112,7 @@ namespace FunS
         protected virtual bool ArrowRender() => m_isReadyToRender;
         protected virtual void RenderRefIection(ScriptableRenderContext SRC)
         {
-            Vector3 normal = -m_refPlaneTrans.forward;
-            Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, normal);
+            Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, GetPlaneNormal());
 
             if (m_screenScaleFactorTemp != m_screenScaleFactor)
             {
@@ -125,13 +123,13 @@ namespace FunS
             //https://github.com/eventlab-projects/com.quickvr.quickbase/blob/ad510ec90049e463eb897da65459fa65630d4e54/Runtime/QuickMirror/QuickMirrorReflection_v2.cs#L83
             /* Position */
             Vector3 camToPlane = m_cameraTrans.position - m_refPlaneTrans.position;
-            Vector3 reflectionCamToPlane = Vector3.Reflect(camToPlane, normal);
+            Vector3 reflectionCamToPlane = Vector3.Reflect(camToPlane, GetPlaneNormal());
             Vector3 camPosRS = transform.position + reflectionCamToPlane;
             m_refCameraTrans.position = camPosRS;
 
             /* Rotation */
-            Vector3 reflectionFwd = Vector3.Reflect(m_cameraTrans.forward, normal);
-            Vector3 reflectionUp = Vector3.Reflect(m_cameraTrans.up, normal);
+            Vector3 reflectionFwd = Vector3.Reflect(m_cameraTrans.forward, GetPlaneNormal());
+            Vector3 reflectionUp = Vector3.Reflect(m_cameraTrans.up, GetPlaneNormal());
             Quaternion q = Quaternion.LookRotation(reflectionFwd, reflectionUp);
             m_refCameraTrans.rotation = q;
 
@@ -150,6 +148,7 @@ namespace FunS
 
             UpdateMirrorCameraSetting();
         }
+        protected virtual Vector3 GetPlaneNormal() => -m_refPlaneTrans.forward;
         #endregion
 
         #region private method
@@ -206,8 +205,8 @@ namespace FunS
             m_refCamera.clearFlags = m_camera.clearFlags;
             m_refCamera.backgroundColor = m_camera.backgroundColor;
             m_refCamera.aspect = m_camera.aspect;
-            m_refCamera.nearClipPlane = Mathf.Max(m_camera.nearClipPlane, 0.1f);
-            m_refCamera.farClipPlane = Mathf.Min(m_camera.farClipPlane, m_distance);
+            //m_refCamera.nearClipPlane = Mathf.Max(m_camera.nearClipPlane, 0.1f);
+            //m_refCamera.farClipPlane = Mathf.Min(m_camera.farClipPlane, m_distance);
             //Deselect masks in src that are not selected in dst.
             m_refCameraCullingMask &= m_camera.cullingMask;
             m_refCamera.cullingMask = m_refCameraCullingMask;
@@ -224,6 +223,8 @@ namespace FunS
             m_refCamera.worldToCameraMatrix *= reflectionMatrix;
 
             m_refCamera.projectionMatrix = isMono ? m_camera.projectionMatrix : m_camera.GetStereoProjectionMatrix((Camera.StereoscopicEye)eye);
+            Vector4 clipPlane = CameraSpacePlane(m_refCamera.worldToCameraMatrix, m_refPlaneTrans.position, GetPlaneNormal(), 1.0f);
+            m_refCamera.projectionMatrix = m_refCamera.CalculateObliqueMatrix(clipPlane);
 
             if (eye != Camera.MonoOrStereoscopicEye.Right)
             {
@@ -235,6 +236,12 @@ namespace FunS
                 m_refCamera.targetTexture = m_rightReflectionRenderTexture;
                 m_refPlaneMaterial.SetMatrix(k_RightReflectionProjectionMatrixID, m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix);
             }
+        }
+        private Vector4 CameraSpacePlane(Matrix4x4 worldToCameraMatrix, Vector3 pos, Vector3 normal, float sideSign)
+        {
+            Vector3 cpos = worldToCameraMatrix.MultiplyPoint(pos);
+            Vector3 cnormal = worldToCameraMatrix.MultiplyVector(normal).normalized * sideSign;
+            return new Vector4(cnormal.x, cnormal.y, cnormal.z, -Vector3.Dot(cpos, cnormal));
         }
         private void RenderReflectionCamera(ScriptableRenderContext SRC)
         {
@@ -297,27 +304,27 @@ namespace FunS
         [HorizontalGroup("ReadOnly"), HideLabel, PreviewField(128, ObjectFieldAlignment.Center)]
         [ShowInInspector] private RenderTexture RRTShow => m_rightReflectionRenderTexture;
 #endif
-        private void OnDrawGizmos()
-        {
-            if (!Application.isPlaying || !m_camera || !m_refCamera) return;
-            DrawCameraFrustum(m_camera, new Color(0, 1, 0, 0.7f));
-            DrawCameraFrustum(m_refCamera, new Color(1, 0, 0, 0.7f));
-        }
-        private void DrawCameraFrustum(Camera c, Color color)
-        {
-            var oriColor = Gizmos.color;
-            var oriMat = Gizmos.matrix;
+        //private void OnDrawGizmos()
+        //{
+        //    if (!Application.isPlaying || !m_camera || !m_refCamera) return;
+        //    DrawCameraFrustum(m_camera, new Color(0, 1, 0, 0.7f));
+        //    DrawCameraFrustum(m_refCamera, new Color(1, 0, 0, 0.7f));
+        //}
+        //private void DrawCameraFrustum(Camera c, Color color)
+        //{
+        //    var oriColor = Gizmos.color;
+        //    var oriMat = Gizmos.matrix;
 
-            Gizmos.color = color;
-            Gizmos.matrix = Matrix4x4.TRS(c.transform.position, c.transform.rotation, Vector3.one);
+        //    Gizmos.color = color;
+        //    Gizmos.matrix = Matrix4x4.TRS(c.transform.position, c.transform.rotation, Vector3.one);
 
-            Gizmos.DrawLine(Vector3.zero, Vector3.forward * c.farClipPlane);
-            Gizmos.DrawFrustum(Vector3.zero, c.fieldOfView, c.farClipPlane, c.nearClipPlane, c.aspect);
-            Gizmos.DrawFrustum(Vector3.zero, c.fieldOfView, c.farClipPlane, 0, c.aspect);
+        //    Gizmos.DrawLine(Vector3.zero, Vector3.forward * c.farClipPlane);
+        //    Gizmos.DrawFrustum(Vector3.zero, c.fieldOfView, c.farClipPlane, c.nearClipPlane, c.aspect);
+        //    Gizmos.DrawFrustum(Vector3.zero, c.fieldOfView, c.farClipPlane, 0, c.aspect);
 
-            Gizmos.color = oriColor;
-            Gizmos.matrix = oriMat;
-        }
+        //    Gizmos.color = oriColor;
+        //    Gizmos.matrix = oriMat;
+        //}
 #endif
         #endregion
     }

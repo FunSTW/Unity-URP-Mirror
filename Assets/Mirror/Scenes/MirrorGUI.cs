@@ -24,6 +24,7 @@ namespace FunS.Demo
                     tmp.text = "( " + mirror.ScreenScaleFactor.ToString("F2") + "x ) " + mirror.RenderSize.ToString();
                 });
                 slider.value = mirror.ScreenScaleFactor;
+                slider.onValueChanged.Invoke(slider.value);
             }
         }
     }
