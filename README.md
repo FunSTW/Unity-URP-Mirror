@@ -1,8 +1,8 @@
 # URP-Mirror
 
 # TODO 
-- 1. CalculateObliqueMatrix
-- 2. CullingMatrix
+- disable refCamera when the plane was culling or invisible.
+- CullingMatrix
 # Reference
 - https://github.com/eventlab-projects/com.quickvr.quickbase/tree/58f6677a122678e123785097b99994080b767866/Runtime/QuickMirror
 # Bug
