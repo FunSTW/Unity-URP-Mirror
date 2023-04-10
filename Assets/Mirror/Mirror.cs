@@ -38,6 +38,11 @@ namespace FunS
         #endregion
 
         #region public field
+        public float ScreenScaleFactor
+        {
+            set => m_screenScaleFactor = Mathf.Clamp(value, 0.1f, 1.0f);
+            get => m_screenScaleFactor;
+        }
         public virtual bool IsCameraXRUsage
         {
             get => XRSettings.enabled && m_camera.stereoEnabled;
@@ -46,14 +51,15 @@ namespace FunS
         {
             get => m_isRendering;
         }
-        public float ScreenScaleFactor
+        public Vector2Int RenderingScreenSize
         {
-            set => m_screenScaleFactor = Mathf.Clamp(value, 0.1f, 1.0f);
-            get => m_screenScaleFactor;
-        }
-        public Vector2Int RenderSize
-        {
-            get => new Vector2Int(m_leftReflectionRenderTexture.width, m_leftReflectionRenderTexture.height);
+            get
+            {
+                Vector2Int usageSize = GetUsageScreenSize();
+                usageSize.x = (int)(m_screenScaleFactor * usageSize.x);
+                usageSize.y = (int)(m_screenScaleFactor * usageSize.y);
+                return usageSize;
+            }
         }
         #endregion
 
@@ -65,7 +71,7 @@ namespace FunS
         }
         private IEnumerator WaitForVRReady()
         {
-            while (CalculateScreenSize().x == 0) yield return null;
+            while (RenderingScreenSize.x == 0) yield return null;
 
             m_refPlaneMaterial = m_refPlane.material;
             m_refPlaneTrans = m_refPlane.transform;
@@ -184,7 +190,7 @@ namespace FunS
                 ? ref m_rightReflectionRenderTexture
                 : ref m_leftReflectionRenderTexture;
 
-            Vector2Int size = CalculateScreenSize();
+            Vector2Int size = RenderingScreenSize;
             if (targetRT == null)
             {
                 targetRT = new RenderTexture(size.x, size.y, 16, RenderTextureFormat.Default);
@@ -223,7 +229,7 @@ namespace FunS
             m_refCamera.worldToCameraMatrix *= reflectionMatrix;
 
             m_refCamera.projectionMatrix = isMono ? m_camera.projectionMatrix : m_camera.GetStereoProjectionMatrix((Camera.StereoscopicEye)eye);
-            Vector4 clipPlane = CameraSpacePlane(m_refCamera.worldToCameraMatrix, m_refPlaneTrans.position, GetPlaneNormal(), 1.0f);
+            Vector4 clipPlane = CameraSpacePlane(m_refCamera.worldToCameraMatrix, m_refPlaneTrans.position, GetPlaneNormal());
             m_refCamera.projectionMatrix = m_refCamera.CalculateObliqueMatrix(clipPlane);
 
             if (eye != Camera.MonoOrStereoscopicEye.Right)
@@ -237,34 +243,33 @@ namespace FunS
                 m_refPlaneMaterial.SetMatrix(k_RightReflectionProjectionMatrixID, m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix);
             }
         }
-        private Vector4 CameraSpacePlane(Matrix4x4 worldToCameraMatrix, Vector3 pos, Vector3 normal, float sideSign)
-        {
-            Vector3 cpos = worldToCameraMatrix.MultiplyPoint(pos);
-            Vector3 cnormal = worldToCameraMatrix.MultiplyVector(normal).normalized * sideSign;
-            return new Vector4(cnormal.x, cnormal.y, cnormal.z, -Vector3.Dot(cpos, cnormal));
-        }
         private void RenderReflectionCamera(ScriptableRenderContext SRC)
         {
             GL.invertCulling = true;
             UniversalRenderPipeline.RenderSingleCamera(SRC, m_refCamera);
             GL.invertCulling = false;
         }
-        private Vector2Int CalculateScreenSize()
+        private Vector2Int GetUsageScreenSize()
         {
-            return new Vector2Int(
-                (int)(m_screenScaleFactor * (IsCameraXRUsage ? XRSettings.eyeTextureWidth : Screen.width))
-                , (int)(m_screenScaleFactor * (IsCameraXRUsage ? XRSettings.eyeTextureHeight : Screen.height))
-                );
+            return IsCameraXRUsage
+                ? new Vector2Int(XRSettings.eyeTextureWidth, XRSettings.eyeTextureHeight)
+                : new Vector2Int(Screen.width, Screen.height);
+        }
+        private Vector4 CameraSpacePlane(Matrix4x4 worldToCameraMatrix, Vector3 pos, Vector3 normal)
+        {
+            Vector3 cpos = worldToCameraMatrix.MultiplyPoint(pos);
+            Vector3 cnormal = worldToCameraMatrix.MultiplyVector(normal).normalized;
+            return new Vector4(cnormal.x, cnormal.y, cnormal.z, -Vector3.Dot(cpos, cnormal));
         }
         #endregion
 
         #region ref
         //https://github.com/eventlab-projects/com.quickvr.quickbase/blob/ad510ec90049e463eb897da65459fa65630d4e54/Runtime/QuickMirror/QuickMirrorReflection_v2.cs#L184
         // Calculates reflection matrix around the given plane
-        protected virtual Matrix4x4 CalculateReflectionMatrix(Vector3 position, Vector3 normal)
+        protected virtual Matrix4x4 CalculateReflectionMatrix(Vector3 pivot, Vector3 facingNormal)
         {
-            float d = -Vector3.Dot(normal, position);
-            Vector4 plane = new Vector4(normal.x, normal.y, normal.z, d);
+            float d = -Vector3.Dot(facingNormal, pivot);
+            Vector4 plane = new Vector4(facingNormal.x, facingNormal.y, facingNormal.z, d);
 
             Matrix4x4 reflectionMat = Matrix4x4.zero;
 
