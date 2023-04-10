@@ -100,7 +100,8 @@ namespace FunS
         }
         private void OnBeginCameraRendering(ScriptableRenderContext SRC, Camera camera)
         {
-            if (camera != m_camera || !IsRequireReady() || !ArrowRender())
+            if (camera != m_camera) return;
+            if (!IsRequireReady() || !ArrowRender())
             {
                 m_isRendering = false;
                 return;
