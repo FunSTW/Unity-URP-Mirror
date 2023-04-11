@@ -45,13 +45,18 @@ namespace FunS
         #region public field
         public float ScreenScaleFactor
         {
-            set => value = m_screenScaleFactor;
+            set => m_screenScaleFactor = value;
             get => m_screenScaleFactor;
         }
         public MSAASamples MSAA
         {
-            set => value = m_msaa;
+            set => m_msaa = value;
             get => m_msaa;
+        }
+        public bool UseShadow
+        {
+            set => m_useShadow = value;
+            get => m_useShadow;
         }
         public virtual bool IsCameraXRUsage
         {
