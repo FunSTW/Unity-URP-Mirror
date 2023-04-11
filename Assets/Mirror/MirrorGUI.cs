@@ -8,8 +8,13 @@ namespace FunS.Demo
     {
         [SerializeField] private Mirror mirror;
         [SerializeField] private UnityEngine.UI.Toggle toggle;
+        [SerializeField] private UnityEngine.UI.Toggle toggleShadow;
         [SerializeField] private UnityEngine.UI.Slider slider;
-        [SerializeField] private TMPro.TextMeshProUGUI tmp;
+        [SerializeField] private TMPro.TextMeshProUGUI renderScaleTMP;
+        [SerializeField] private UnityEngine.UI.Button B1;
+        [SerializeField] private UnityEngine.UI.Button B2;
+        [SerializeField] private UnityEngine.UI.Button B4;
+        [SerializeField] private UnityEngine.UI.Button B8;
 
         private bool m_inited;
 
@@ -20,19 +25,31 @@ namespace FunS.Demo
             if (!m_inited)
             {
                 m_inited = true;
-                slider.onValueChanged.AddListener((f) => {
+                slider.onValueChanged.AddListener((f) =>
+                {
                     f = Mathf.FloorToInt(f * 100) / 100f;
                     mirror.ScreenScaleFactor = f;
-                    tmp.text = "( " + mirror.ScreenScaleFactor.ToString("F2") + "x ) " + mirror.RenderingScreenSize.ToString();
+                    renderScaleTMP.text = "( " + mirror.ScreenScaleFactor.ToString("F2") + "x ) " + mirror.RenderingScreenSize.ToString();
                 });
                 slider.value = mirror.ScreenScaleFactor;
                 slider.onValueChanged.Invoke(slider.value);
 
-                toggle.isOn = mirror.enabled;
-                toggle.onValueChanged.AddListener((b) => 
+                mirror.enabled = toggle.isOn;
+                toggle.onValueChanged.AddListener((b) =>
                 {
                     mirror.enabled = b;
                 });
+
+                mirror.UseShadow = toggleShadow.isOn;
+                toggleShadow.onValueChanged.AddListener((b) =>
+                {
+                    mirror.UseShadow = b;
+                });
+
+                B1.onClick.AddListener(() => { mirror.MSAA = UnityEngine.Rendering.MSAASamples.None; });
+                B2.onClick.AddListener(() => { mirror.MSAA = UnityEngine.Rendering.MSAASamples.MSAA2x; });
+                B4.onClick.AddListener(() => { mirror.MSAA = UnityEngine.Rendering.MSAASamples.MSAA4x; });
+                B8.onClick.AddListener(() => { mirror.MSAA = UnityEngine.Rendering.MSAASamples.MSAA8x; });
             }
         }
     }
