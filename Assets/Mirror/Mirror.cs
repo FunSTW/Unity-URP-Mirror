@@ -118,6 +118,13 @@ namespace FunS
         private void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            if(m_leftReflectionRenderTexture)
+                DestroyImmediate(m_leftReflectionRenderTexture);
+            m_leftReflectionRenderTexture = null;
+            if (m_rightReflectionRenderTexture)
+                DestroyImmediate(m_rightReflectionRenderTexture);
+            m_rightReflectionRenderTexture = null;
+            m_isRendering = false;
             //s_mirrorRenderingReflectionCamera.Remove(m_refCamera);
         }
         private void OnBeginCameraRendering(ScriptableRenderContext SRC, Camera camera)
@@ -145,6 +152,10 @@ namespace FunS
             Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, GetPlaneNormal());
 
             bool isRTDirty = false;
+            if (m_leftReflectionRenderTexture == null)
+            {
+                isRTDirty = true;
+            }
             if (m_screenScaleFactorTemp != m_screenScaleFactor)
             {
                 m_screenScaleFactor = Mathf.Clamp(m_screenScaleFactor, 0.1f, 1.0f);
