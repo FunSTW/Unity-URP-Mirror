@@ -561,7 +561,7 @@ GameObject:
   - component: {fileID: 1801679971827552273}
   - component: {fileID: 626751312102903065}
   m_Layer: 5
-  m_Name: Controller
+  m_Name: MirrorGUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -25,10 +25,7 @@ Shader "FunS/Mirror-Base" {
             struct v2f {
                 UNITY_FOG_COORDS(1)
                 half4 vertex : SV_POSITION;
-                half4 leftPosCS : TEXCOORD0;
-                #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
-                    half4 rightPosCS : TEXCOORD1;
-                #endif
+                half4 refPosCS : TEXCOORD0;
 
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -51,9 +48,15 @@ Shader "FunS/Mirror-Base" {
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.leftPosCS = ComputeScreenPos(mul(mul(_LeftReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
+                
                 #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
-                    o.rightPosCS = ComputeScreenPos(mul(mul(_RightReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
+                    if (unity_StereoEyeIndex) {
+                        o.refPosCS = ComputeScreenPos(mul(mul(_RightReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
+                    } else {
+                        o.refPosCS = ComputeScreenPos(mul(mul(_LeftReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
+                    }
+                #else
+                    o.refPosCS = ComputeScreenPos(mul(mul(_LeftReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
                 #endif
 
                 UNITY_TRANSFER_FOG(o, o.vertex);
@@ -70,19 +73,17 @@ Shader "FunS/Mirror-Base" {
             fixed4 frag(v2f i) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 fixed4 output;
+                half2 uv = CheckPlatformUV(i.refPosCS.xy / i.refPosCS.w);
                 
                 //https://github.com/TwoTailsGames/Unity-Built-in-Shaders/blob/master/CGIncludes/HLSLSupport.cginc
                 #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
                     if (unity_StereoEyeIndex) {
-                        half2 rightUV = CheckPlatformUV(i.rightPosCS.xy / i.rightPosCS.w);
-                        output = tex2D(_RightReflectionTex, rightUV);
+                        output = tex2D(_RightReflectionTex, uv);
                     } else {
-                        half2 leftUV = CheckPlatformUV(i.leftPosCS.xy / i.leftPosCS.w);
-                        output = tex2D(_LeftReflectionTex, leftUV);
+                        output = tex2D(_LeftReflectionTex, uv);
                     }
                 #else
-                    half2 leftUV = CheckPlatformUV(i.leftPosCS.xy / i.leftPosCS.w);
-                    output = tex2D(_LeftReflectionTex, leftUV);
+                    output = tex2D(_LeftReflectionTex, uv);
                 #endif
 
                 UNITY_APPLY_FOG(i.fogCoord, output);
