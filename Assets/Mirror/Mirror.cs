@@ -15,7 +15,7 @@ namespace FunS
         [SerializeField] private Camera m_camera;
         [Space]
         [SerializeField, Range(0.1f, 1.0f)] private float m_screenScaleFactor = 0.5f;
-        [SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
+        //[SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
         [SerializeField] private bool m_useShadow;
         [SerializeField] private MSAASamples m_msaa = MSAASamples.MSAA4x;
         [SerializeField] private LayerMask m_refCameraCullingMask = int.MaxValue;
@@ -161,6 +161,8 @@ namespace FunS
             Quaternion q = Quaternion.LookRotation(reflectionFwd, reflectionUp);
             m_refCameraTrans.rotation = q;
 
+            SetupReflectionCameraProp(m_camera);
+
             if (!IsCameraXRUsage)
             {
                 SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye.Mono, reflectionMatrix);
@@ -173,8 +175,6 @@ namespace FunS
                 SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye.Right, reflectionMatrix);
                 RenderReflectionCamera(SRC);
             }
-
-            SetupReflectionCameraProp(m_camera);
         }
         protected virtual void SetupReflectionCameraProp(Camera src)
         {
@@ -182,7 +182,7 @@ namespace FunS
             m_refCamera.backgroundColor = src.backgroundColor;
             m_refCamera.aspect = src.aspect;
             //m_refCamera.nearClipPlane = Mathf.Max(m_camera.nearClipPlane, 0.1f);
-            //m_refCamera.farClipPlane = Mathf.Min(m_camera.farClipPlane, m_distance);
+            //m_refCamera.farClipPlane = m_distance;
             //Deselect masks in src that are not selected in dst.
             m_refCameraCullingMask &= src.cullingMask;
             m_refCamera.cullingMask = m_refCameraCullingMask;
@@ -290,11 +290,13 @@ namespace FunS
                 ? new Vector2Int(XRSettings.eyeTextureWidth, XRSettings.eyeTextureHeight)
                 : new Vector2Int(Screen.width, Screen.height);
         }
+        //https://danielilett.com/2019-12-18-tut4-3-matrix-matching/
         private Vector4 CameraSpacePlane(Matrix4x4 worldToCameraMatrix, Vector3 pos, Vector3 normal)
         {
-            Vector3 cpos = worldToCameraMatrix.MultiplyPoint(pos);
-            Vector3 cnormal = worldToCameraMatrix.MultiplyVector(normal).normalized;
-            return new Vector4(cnormal.x, cnormal.y, cnormal.z, -Vector3.Dot(cpos, cnormal));
+            Plane p = new Plane(normal, pos);
+            Vector4 clipPlane = new Vector4(p.normal.x, p.normal.y, p.normal.z, p.distance);
+            Vector4 clipPlaneCameraSpace = Matrix4x4.Transpose(Matrix4x4.Inverse(worldToCameraMatrix)) * clipPlane;
+            return clipPlaneCameraSpace;
         }
         #endregion
 
