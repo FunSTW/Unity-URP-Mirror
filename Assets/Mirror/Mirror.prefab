@@ -97,13 +97,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_camera: {fileID: 0}
+  m_mirrorRenderCullingMask:
+    serializedVersion: 2
+    m_Bits: 19
   m_screenScaleFactor: 0.5
-  m_distance: 10
   m_useShadow: 0
   m_msaa: 4
-  m_refCameraCullingMask:
-    serializedVersion: 2
-    m_Bits: 2147483647
   m_refPlane: {fileID: 1046339473663677589}
 --- !u!1 &1046339473979804171
 GameObject:

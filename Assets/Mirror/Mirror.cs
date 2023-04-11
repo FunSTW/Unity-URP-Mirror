@@ -13,12 +13,13 @@ namespace FunS
     {
         #region private variable
         [SerializeField] private Camera m_camera;
-        [Space]
+        [Header("Rendering")]
+        [SerializeField] private LayerMask m_mirrorRenderCullingMask = int.MaxValue;
         [SerializeField, Range(0.1f, 1.0f)] private float m_screenScaleFactor = 0.5f;
         //[SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
         [SerializeField] private bool m_useShadow;
         [SerializeField] private MSAASamples m_msaa = MSAASamples.MSAA4x;
-        [SerializeField] private LayerMask m_refCameraCullingMask = int.MaxValue;
+
         [Header("Require")]
         [SerializeField] private MeshRenderer m_refPlane;
 
@@ -184,8 +185,8 @@ namespace FunS
             //m_refCamera.nearClipPlane = Mathf.Max(m_camera.nearClipPlane, 0.1f);
             //m_refCamera.farClipPlane = m_distance;
             //Deselect masks in src that are not selected in dst.
-            m_refCameraCullingMask &= src.cullingMask;
-            m_refCamera.cullingMask = m_refCameraCullingMask;
+            m_mirrorRenderCullingMask &= src.cullingMask;
+            m_refCamera.cullingMask = m_mirrorRenderCullingMask;
 
             m_refCamera.orthographic = src.orthographic;
             m_refCamera.orthographicSize = src.orthographicSize;
