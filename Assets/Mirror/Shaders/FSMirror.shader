@@ -4,7 +4,7 @@ Shader "FunS/Mirror-Base" {
         [NoScaleOffset] _RightReflectionTex ("R", 2D) = "white" { }
     }
     SubShader {
-        Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" "Queue" = "Geometry+100" }
+        Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" "Queue" = "Geometry" }
         LOD 100
 
         Pass {

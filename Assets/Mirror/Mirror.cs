@@ -3,6 +3,7 @@ using UnityEngine.XR;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace FunS
 {
@@ -19,6 +20,7 @@ namespace FunS
         //[SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
         [SerializeField] private bool m_useShadow;
         [SerializeField] private MSAASamples m_msaa = MSAASamples.MSAA4x;
+        //[SerializeField] private Color m_fadeColor = new Color(0.16f, 0.53f, 0.06f);
 
         [Header("Require")]
         [SerializeField] private MeshRenderer m_refPlane;
@@ -36,10 +38,13 @@ namespace FunS
         private RenderTexture m_leftReflectionRenderTexture;
         private RenderTexture m_rightReflectionRenderTexture;
 
+        //private static List<Camera> s_mirrorRenderingReflectionCamera = new List<Camera>();
+
         private readonly int k_LeftReflectionProjectionMatrixID = Shader.PropertyToID("_LeftReflectionProjectionMatrix");
         private readonly int k_RightReflectionProjectionMatrixID = Shader.PropertyToID("_RightReflectionProjectionMatrix");
         private readonly int k_LeftReflectionTexID = Shader.PropertyToID("_LeftReflectionTex");
         private readonly int k_RightReflectionTexID = Shader.PropertyToID("_RightReflectionTex");
+        //private readonly int k_FadeColorID = Shader.PropertyToID("_FadeColor");
         #endregion
 
         #region public field
@@ -113,6 +118,7 @@ namespace FunS
         private void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            //s_mirrorRenderingReflectionCamera.Remove(m_refCamera);
         }
         private void OnBeginCameraRendering(ScriptableRenderContext SRC, Camera camera)
         {
@@ -234,7 +240,7 @@ namespace FunS
                 : ref m_leftReflectionRenderTexture;
 
             Vector2Int size = RenderingScreenSize;
-            if (targetRT != null && targetRT.IsCreated() && targetRT.antiAliasing != (int)m_msaa) 
+            if (targetRT != null && targetRT.IsCreated() && targetRT.antiAliasing != (int)m_msaa)
             {
                 DestroyImmediate(targetRT);
                 targetRT = null;
@@ -255,9 +261,9 @@ namespace FunS
             }
             targetRT.anisoLevel = 0;
             targetRT.antiAliasing = (int)m_msaa;
-            if(!targetRT.IsCreated()) 
+            if (!targetRT.IsCreated())
                 targetRT.Create();
-            
+
             targetRT.name = $"[RefCam]{name} {(stereoscopicEye == Camera.StereoscopicEye.Left ? "Left" : "Right")}:{this.GetInstanceID()}";
         }
 
@@ -304,6 +310,16 @@ namespace FunS
             Vector4 clipPlaneCameraSpace = Matrix4x4.Transpose(Matrix4x4.Inverse(worldToCameraMatrix)) * clipPlane;
             return clipPlaneCameraSpace;
         }
+        #endregion
+
+        #region private static method
+        //private static bool IsReflectionCamera(Camera camera)
+        //{
+        //    foreach (var cam in s_mirrorRenderingReflectionCamera)
+        //        if (cam == camera)
+        //            return true;
+        //    return false;
+        //}
         #endregion
 
         #region ref

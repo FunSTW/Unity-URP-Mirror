@@ -206,6 +206,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1046339473663677589, guid: a5e91838579c04d49b6a4988ecee7519,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 58874704b469fa14bab07e40a1751ab9, type: 2}
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_RootOrder
@@ -229,7 +234,7 @@ PrefabInstance:
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -1.407
       objectReference: {fileID: 0}
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
@@ -279,7 +284,7 @@ PrefabInstance:
     - target: {fileID: 1046339473979804171, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_Name
-      value: Mirror
+      value: Mirror Lit
       objectReference: {fileID: 0}
     - target: {fileID: 1046339473979804171, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
@@ -733,8 +738,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 297230996}
+  - component: {fileID: 297230998}
   - component: {fileID: 297230995}
+  - component: {fileID: 297230997}
+  - component: {fileID: 297230996}
   m_Layer: 0
   m_Name: XR Interaction Manager
   m_TagString: Untagged
@@ -756,21 +763,64 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_StartingHoverFilters: []
   m_StartingSelectFilters: []
---- !u!4 &297230996
-Transform:
+--- !u!114 &297230996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 297230994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.16018099, g: 0.5377358, b: 0.053266283, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &297230997
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 297230994}
+  m_CullTransparentMesh: 1
+--- !u!224 &297230998
+RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 297230994}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.3912897, y: -2.7813885, z: 11.804308}
+  m_LocalPosition: {x: 0, y: 0, z: 11.804308}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 17
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -7.3912897, y: -2.7813885}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &302473187
 GameObject:
   m_ObjectHideFlags: 0
@@ -2969,7 +3019,7 @@ PrefabInstance:
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 1.593
       objectReference: {fileID: 0}
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
@@ -2979,7 +3029,7 @@ PrefabInstance:
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.255
+      value: -4.254998
       objectReference: {fileID: 0}
     - target: {fileID: 1046339473979804170, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
@@ -3019,12 +3069,12 @@ PrefabInstance:
     - target: {fileID: 1046339473979804171, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_Name
-      value: Mirror_1
+      value: Mirror
       objectReference: {fileID: 0}
     - target: {fileID: 1046339473979804171, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1046339474993348418, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
@@ -3035,6 +3085,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1829929814919187188, guid: a5e91838579c04d49b6a4988ecee7519,
+        type: 3}
+      propertyPath: m_screenScaleFactor
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8546729349117334020, guid: a5e91838579c04d49b6a4988ecee7519,
         type: 3}
@@ -3208,12 +3263,12 @@ PrefabInstance:
     - target: {fileID: 1801679971236749941, guid: 7ffa8f10ab4b2054a98ec26dbd57116a,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1801679971287621146, guid: 7ffa8f10ab4b2054a98ec26dbd57116a,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1801679971827552272, guid: 7ffa8f10ab4b2054a98ec26dbd57116a,
         type: 3}
