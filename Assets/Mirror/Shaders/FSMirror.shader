@@ -8,35 +8,34 @@ Shader "FunS/Mirror-Base" {
         LOD 100
 
         Pass {
-            CGPROGRAM
-
+            HLSLINCLUDE 
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
 
-            #include "UnityCG.cginc"
-
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+             
             struct appdata {
-                half4 vertex : POSITION;
+                float4 vertex : POSITION;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f {
                 UNITY_FOG_COORDS(1)
-                half4 vertex : SV_POSITION;
-                half4 refPosCS : TEXCOORD0;
+                float4 vertex : SV_POSITION;
+                float4 refPosCS : TEXCOORD0;
 
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
             sampler2D _LeftReflectionTex;
-            half4x4 _LeftReflectionProjectionMatrix;
+            float4x4 _LeftReflectionProjectionMatrix;
 
             #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
                 sampler2D _RightReflectionTex;
-                half4x4 _RightReflectionProjectionMatrix;
+                float4x4 _RightReflectionProjectionMatrix;
             #endif
             CBUFFER_END
 
@@ -63,7 +62,7 @@ Shader "FunS/Mirror-Base" {
                 return o;
             }
 
-            half2 CheckPlatformUV(half2 uv) {
+            half2 CheckPlatformUV(float2 uv) {
                 #if UNITY_UV_STARTS_AT_TOP
                     uv.y = 1 - uv.y;
                 #endif
@@ -90,8 +89,7 @@ Shader "FunS/Mirror-Base" {
 
                 return output;
             }
-            ENDCG
-
+            ENDHLSL
         }
     }
 }
