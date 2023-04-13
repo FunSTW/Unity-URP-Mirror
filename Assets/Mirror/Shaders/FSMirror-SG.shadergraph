@@ -325,10 +325,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -503.0000305175781,
-            "y": 192.99998474121095,
-            "width": 251.99998474121095,
-            "height": 142.0000457763672
+            "x": -505.3333740234375,
+            "y": 186.0,
+            "width": 253.3333740234375,
+            "height": 328.0
         }
     },
     "m_Slots": [
@@ -342,7 +342,7 @@
             "m_Id": "83d2a8caaf9042c9949dcc7ad8bfb875"
         },
         {
-            "m_Id": "0ca4cca16c8143ee858bf657e294922e"
+            "m_Id": "6da6f60254b24f3783e9bc92649b3d6e"
         }
     ],
     "synonyms": [
@@ -359,29 +359,6 @@
     "m_FunctionName": "SampleMirrorTex",
     "m_FunctionSource": "376ef29c7a6be6f488d14071ad9f6152",
     "m_FunctionBody": "Enter function body here..."
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
-    "m_ObjectId": "0ca4cca16c8143ee858bf657e294922e",
-    "m_Id": 0,
-    "m_DisplayName": "Color",
-    "m_SlotType": 1,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "Color",
-    "m_StageCapability": 3,
-    "m_Value": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-    },
-    "m_DefaultValue": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-    },
-    "m_Labels": []
 }
 
 {
@@ -765,7 +742,7 @@
     "m_RefNameGeneratedByDisplayName": "LeftReflectionTex",
     "m_DefaultReferenceName": "_LeftReflectionTex",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": false,
+    "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_Precision": 0,
@@ -801,6 +778,31 @@
         "x": 0.0,
         "y": 0.0,
         "z": 0.0
+    },
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
+    "m_ObjectId": "6da6f60254b24f3783e9bc92649b3d6e",
+    "m_Id": 0,
+    "m_DisplayName": "Color",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Color",
+    "m_StageCapability": 3,
+    "m_Value": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+    },
+    "m_DefaultValue": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
     },
     "m_Labels": []
 }
@@ -859,7 +861,7 @@
     "m_RefNameGeneratedByDisplayName": "RightReflectionTex",
     "m_DefaultReferenceName": "_RightReflectionTex",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": false,
+    "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_Precision": 0,

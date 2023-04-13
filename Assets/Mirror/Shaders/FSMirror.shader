@@ -8,88 +8,69 @@ Shader "FunS/Mirror-Base" {
         LOD 100
 
         Pass {
-            HLSLINCLUDE 
+            HLSLPROGRAM
+
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-             
+            #include "FSMirrorIncluded.hlsl"
+
             struct appdata {
-                float4 vertex : POSITION;
+                half4 vertex : POSITION;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f {
-                UNITY_FOG_COORDS(1)
-                float4 vertex : SV_POSITION;
-                float4 refPosCS : TEXCOORD0;
+                half4 vertex : SV_POSITION;
+                float fogCoord : TEXCOORD0;
+                half4 refPosCS : TEXCOORD1;
 
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
             sampler2D _LeftReflectionTex;
-            float4x4 _LeftReflectionProjectionMatrix;
-
-            #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
-                sampler2D _RightReflectionTex;
-                float4x4 _RightReflectionProjectionMatrix;
-            #endif
+            half4x4 _LeftReflectionProjectionMatrix;
+            sampler2D _RightReflectionTex;
+            half4x4 _RightReflectionProjectionMatrix;
             CBUFFER_END
 
             v2f vert(appdata v) {
                 v2f o;
 
                 UNITY_SETUP_INSTANCE_ID(v);
-                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                ZERO_INITIALIZE(v2f, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.vertex = TransformObjectToHClip(v.vertex.xyz);
                 
-                #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
-                    if (unity_StereoEyeIndex) {
-                        o.refPosCS = ComputeScreenPos(mul(mul(_RightReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
-                    } else {
-                        o.refPosCS = ComputeScreenPos(mul(mul(_LeftReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
-                    }
-                #else
-                    o.refPosCS = ComputeScreenPos(mul(mul(_LeftReflectionProjectionMatrix, UNITY_MATRIX_M), v.vertex));
-                #endif
+                GetMirrorUV_VertexInput_half(v.vertex.xyz, _LeftReflectionProjectionMatrix, _RightReflectionProjectionMatrix, o.refPosCS);
 
-                UNITY_TRANSFER_FOG(o, o.vertex);
+                o.fogCoord = ComputeFogFactor(o.vertex.z);
                 return o;
             }
 
-            half2 CheckPlatformUV(float2 uv) {
+            half2 CheckPlatformUV(half2 uv) {
                 #if UNITY_UV_STARTS_AT_TOP
                     uv.y = 1 - uv.y;
                 #endif
                 return uv;
             }
 
-            fixed4 frag(v2f i) : SV_Target {
+            half4 frag(v2f i) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-                fixed4 output;
-                half2 uv = CheckPlatformUV(i.refPosCS.xy / i.refPosCS.w);
+                half4 output;
+                half2 uv;
+                GetMirrorUV_FragInput_half(i.refPosCS, uv);
                 
-                //https://github.com/TwoTailsGames/Unity-Built-in-Shaders/blob/master/CGIncludes/HLSLSupport.cginc
-                #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
-                    if (unity_StereoEyeIndex) {
-                        output = tex2D(_RightReflectionTex, uv);
-                    } else {
-                        output = tex2D(_LeftReflectionTex, uv);
-                    }
-                #else
-                    output = tex2D(_LeftReflectionTex, uv);
-                #endif
-
-                UNITY_APPLY_FOG(i.fogCoord, output);
-
+                output = SampleMirrorTex(_LeftReflectionTex, _RightReflectionTex, uv);
                 return output;
             }
             ENDHLSL
+
         }
     }
-}
+    }
