@@ -1,6 +1,6 @@
 # 🚧URP-Mirror🚧
-🚧WIP🚧  
-✨ Mirror in URP. Support VR Single-Pass-Instanced Rendering.
+🚧WIP🚧     
+✨ Mirror in URP. Support VR Single-Pass-Instanced Rendering.   
 ✒️ MultPass is temporarily not supported, fixing in progress
 
   https://user-images.githubusercontent.com/45548858/230920499-8b557a68-15cc-4027-8623-7e5ead72179e.mp4
