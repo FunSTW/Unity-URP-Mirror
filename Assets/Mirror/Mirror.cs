@@ -7,9 +7,6 @@ using System.Collections.Generic;
 
 namespace FunS
 {
-#if ODIN_INSPECTOR
-    using Sirenix.OdinInspector;
-#endif
     public class Mirror : MonoBehaviour
     {
         #region private variable
@@ -270,6 +267,7 @@ namespace FunS
                     targetRT.width = size.x;
                 }
             }
+            targetRT.useMipMap = false;
             targetRT.anisoLevel = 0;
             targetRT.antiAliasing = (int)m_msaa;
             if (!targetRT.IsCreated())
@@ -365,42 +363,6 @@ namespace FunS
 
             return reflectionMat;
         }
-        #endregion
-
-        #region DEBUG
-#if UNITY_EDITOR
-#if ODIN_INSPECTOR
-        [ShowInInspector] private bool IsCameraXRUsageShow => m_camera && IsCameraXRUsage;
-        [ShowInInspector] private Vector2Int CalculateScreenSizeShow => CalculateScreenSize();
-        [Title("Left", titleAlignment: TitleAlignments.Centered)]
-        [HorizontalGroup("ReadOnly"), HideLabel, PreviewField(128, ObjectFieldAlignment.Center)]
-        [ShowInInspector] private RenderTexture LRTShow => m_leftReflectionRenderTexture;
-        [Title("Right", titleAlignment: TitleAlignments.Centered)]
-        [HorizontalGroup("ReadOnly"), HideLabel, PreviewField(128, ObjectFieldAlignment.Center)]
-        [ShowInInspector] private RenderTexture RRTShow => m_rightReflectionRenderTexture;
-#endif
-        //private void OnDrawGizmos()
-        //{
-        //    if (!Application.isPlaying || !m_camera || !m_refCamera) return;
-        //    DrawCameraFrustum(m_camera, new Color(0, 1, 0, 0.7f));
-        //    DrawCameraFrustum(m_refCamera, new Color(1, 0, 0, 0.7f));
-        //}
-        //private void DrawCameraFrustum(Camera c, Color color)
-        //{
-        //    var oriColor = Gizmos.color;
-        //    var oriMat = Gizmos.matrix;
-
-        //    Gizmos.color = color;
-        //    Gizmos.matrix = Matrix4x4.TRS(c.transform.position, c.transform.rotation, Vector3.one);
-
-        //    Gizmos.DrawLine(Vector3.zero, Vector3.forward * c.farClipPlane);
-        //    Gizmos.DrawFrustum(Vector3.zero, c.fieldOfView, c.farClipPlane, c.nearClipPlane, c.aspect);
-        //    Gizmos.DrawFrustum(Vector3.zero, c.fieldOfView, c.farClipPlane, 0, c.aspect);
-
-        //    Gizmos.color = oriColor;
-        //    Gizmos.matrix = oriMat;
-        //}
-#endif
         #endregion
     }
 }
