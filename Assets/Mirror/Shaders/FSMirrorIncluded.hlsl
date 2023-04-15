@@ -55,4 +55,4 @@ void SampleMirrorTex_float(UnityTexture2D lTex, UnityTexture2D rTex, float2 uv, 
     #endif
 }
 
-#endif //FSMIRRORSGINCLUDED_INC
+#endif //FSMIRRORSGINCLUDED_INCLUDED

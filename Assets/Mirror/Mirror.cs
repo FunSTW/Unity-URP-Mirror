@@ -15,8 +15,8 @@ namespace FunS
         [SerializeField] private LayerMask m_mirrorRenderCullingMask = int.MaxValue;
         [SerializeField, Range(0.1f, 1.0f)] private float m_screenScaleFactor = 0.5f;
         //[SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
-        [SerializeField] private bool m_useShadow;
         [SerializeField] private MSAASamples m_msaa = MSAASamples.MSAA4x;
+        [SerializeField] private bool m_useShadow;
         //[SerializeField] private Color m_fadeColor = new Color(0.16f, 0.53f, 0.06f);
 
         [Header("Require")]
@@ -28,13 +28,14 @@ namespace FunS
         private UniversalAdditionalCameraData m_refCameraUrpData;
         private Transform m_refPlaneTrans;
         private Material m_refPlaneMaterial;
-        private float m_screenScaleFactorTemp;
-        private MSAASamples m_msaaTemp;
         private bool m_isReadyToRender;
         private bool m_isRendering;
         private RenderTexture m_leftReflectionRenderTexture;
         private RenderTexture m_rightReflectionRenderTexture;
 
+        private float m_screenScaleFactorTemp;
+        private MSAASamples m_msaaTemp;
+        private bool m_useMipMapTemp;
         //private static List<Camera> s_mirrorRenderingReflectionCamera = new List<Camera>();
 
         private readonly int k_LeftReflectionProjectionMatrixID = Shader.PropertyToID("_LeftReflectionProjectionMatrix");
@@ -64,6 +65,10 @@ namespace FunS
         {
             get => XRSettings.enabled && m_camera.stereoEnabled;
         }
+        public virtual bool IsMultiPass
+        {
+            get => XRSettings.stereoRenderingMode == XRSettings.StereoRenderingMode.MultiPass;
+        }
         public bool IsRendering
         {
             get => m_isRendering;
@@ -84,16 +89,15 @@ namespace FunS
         private void Awake()
         {
             if (m_camera == null) m_camera = Camera.main;
-            StartCoroutine(WaitForVRReady());
-        }
-        private IEnumerator WaitForVRReady()
-        {
-            while (RenderingScreenSize.x == 0) yield return null;
-
             m_refPlaneMaterial = m_refPlane.material;
             m_refPlaneTrans = m_refPlane.transform;
             m_screenScaleFactorTemp = m_screenScaleFactor;
             m_msaaTemp = m_msaa;
+            StartCoroutine(WaitXRReady());
+        }
+        private IEnumerator WaitXRReady()
+        {
+            while (RenderingScreenSize.x == 0) yield return null;
             CreateReflectionCamera();
             CreateRefCameraRenderTexture();
             m_isReadyToRender = true;
@@ -115,7 +119,7 @@ namespace FunS
         private void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-            if(m_leftReflectionRenderTexture)
+            if (m_leftReflectionRenderTexture)
                 DestroyImmediate(m_leftReflectionRenderTexture);
             m_leftReflectionRenderTexture = null;
             if (m_rightReflectionRenderTexture)
@@ -148,25 +152,15 @@ namespace FunS
         {
             Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, GetPlaneNormal());
 
-            bool isRTDirty = false;
-            if (m_leftReflectionRenderTexture == null)
-            {
-                isRTDirty = true;
-            }
-            if (m_screenScaleFactorTemp != m_screenScaleFactor)
-            {
-                m_screenScaleFactor = Mathf.Clamp(m_screenScaleFactor, 0.1f, 1.0f);
-                m_screenScaleFactorTemp = m_screenScaleFactor;
-                isRTDirty = true;
-            }
-            if (m_msaaTemp != m_msaa)
+            if (m_leftReflectionRenderTexture == null
+                || m_msaaTemp != m_msaa
+                || m_screenScaleFactorTemp != m_screenScaleFactor)
             {
                 m_msaaTemp = m_msaa;
-                isRTDirty = true;
-            }
+                m_screenScaleFactorTemp = m_screenScaleFactor = Mathf.Clamp(m_screenScaleFactor, 0.1f, 1.0f); ;
 
-            if (isRTDirty)
                 CreateRefCameraRenderTexture();
+            }
 
             //https://github.com/eventlab-projects/com.quickvr.quickbase/blob/ad510ec90049e463eb897da65459fa65630d4e54/Runtime/QuickMirror/QuickMirrorReflection_v2.cs#L83
             /* Position */
@@ -248,34 +242,32 @@ namespace FunS
                 : ref m_leftReflectionRenderTexture;
 
             Vector2Int size = RenderingScreenSize;
-            if (targetRT != null && targetRT.IsCreated() && targetRT.antiAliasing != (int)m_msaa)
+
+            bool recreate = targetRT == null || targetRT.antiAliasing != (int)m_msaa;
+            if (recreate)
             {
-                DestroyImmediate(targetRT);
-                targetRT = null;
+                if (targetRT) DestroyImmediate(targetRT);
+                targetRT = new RenderTexture(size.x, size.y, 0, RenderTextureFormat.Default);
+            }
+            else if (targetRT.height != size.y || targetRT.width != size.x)
+            {
+                targetRT.Release();
+                targetRT.height = size.y;
+                targetRT.width = size.x;
             }
 
-            if (targetRT == null)
-            {
-                targetRT = new RenderTexture(size.x, size.y, 16, RenderTextureFormat.Default);
-            }
-            else
-            {
-                if (targetRT.height != size.y || targetRT.width != size.x)
-                {
-                    targetRT.Release();
-                    targetRT.height = size.y;
-                    targetRT.width = size.x;
-                }
-            }
-            targetRT.useMipMap = false;
-            targetRT.anisoLevel = 0;
             targetRT.antiAliasing = (int)m_msaa;
+            targetRT.anisoLevel = 0;
+            if (m_msaa == MSAASamples.None)
+            {
+                targetRT.depth = 16;
+            }
+
             if (!targetRT.IsCreated())
                 targetRT.Create();
 
             targetRT.name = $"[RefCam]{name} {(stereoscopicEye == Camera.StereoscopicEye.Left ? "Left" : "Right")}:{this.GetInstanceID()}";
         }
-
         private void SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye eye, Matrix4x4 reflectionMatrix)
         {
             bool isMono = eye == Camera.MonoOrStereoscopicEye.Mono;

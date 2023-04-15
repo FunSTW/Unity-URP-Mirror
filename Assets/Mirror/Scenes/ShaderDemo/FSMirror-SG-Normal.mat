@@ -50,6 +50,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SmoothnessMap:
+        m_Texture: {fileID: 2800000, guid: 9db9a2d4f9af74246acc50023ff2d5ff, type: 3}
+        m_Scale: {x: 6, y: 3.377143}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -68,5 +72,6 @@ Material:
     - _NormalStrength: 0.1
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _Smoothness: 1
     m_Colors: []
   m_BuildTextureStacks: []
