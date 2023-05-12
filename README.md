@@ -2,6 +2,12 @@
 🚧WIP🚧     
 ✨ Mirror in URP. Support VR Single-Pass-Instanced Rendering.   
 ✒️ MultPass is temporarily not supported, fixing in progress
+  
+ \- | all-in-one VR Device | Support
+----------|---------|----------
+ Meta | Quest2, QuestPro | ✅
+ HTC | Focus3, Elite | ⚠️ RightEye OnBeginCameraRendering has some issue
+
 
   https://user-images.githubusercontent.com/45548858/230920499-8b557a68-15cc-4027-8623-7e5ead72179e.mp4
   
