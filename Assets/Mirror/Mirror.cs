@@ -134,10 +134,12 @@ namespace FunS
             if (!IsRequireReady() || !ArrowRender())
             {
                 m_isRendering = false;
-                return;
             }
-            m_isRendering = true;
-            RenderRefIection(SRC);
+            else
+            {
+                m_isRendering = true;
+                RenderReflection(SRC);
+            }
         }
         #endregion
 
@@ -146,9 +148,16 @@ namespace FunS
             m_refCamera != null
             && m_refPlaneMaterial != null
             && m_refPlane != null;
-        protected virtual bool ArrowRender() => m_isReadyToRender/* && Vector3.Dot(GetPlaneNormal(),m_cameraTrans.forward) < 0.0f*/;
+        protected virtual bool ArrowRender()
+        {
+            return m_isReadyToRender
+                //isFacing
+                && Vector3.Dot(GetPlaneNormal(), m_cameraTrans.forward) < 0f
+                //isVisible
+                && m_refPlane.isVisible;
+        }
         protected virtual Vector3 GetPlaneNormal() => -m_refPlaneTrans.forward;
-        protected virtual void RenderRefIection(ScriptableRenderContext SRC)
+        protected virtual void RenderReflection(ScriptableRenderContext SRC)
         {
             Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, GetPlaneNormal());
 
