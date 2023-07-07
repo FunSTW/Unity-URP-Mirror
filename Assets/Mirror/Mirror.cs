@@ -17,7 +17,6 @@ namespace FunS
         //[SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
         [SerializeField] private MSAASamples m_msaa = MSAASamples.MSAA4x;
         [SerializeField] private bool m_useShadow;
-        //[SerializeField] private Color m_fadeColor = new Color(0.16f, 0.53f, 0.06f);
 
         [Header("Require")]
         [SerializeField] private MeshRenderer m_refPlane;
@@ -36,19 +35,17 @@ namespace FunS
         private float m_screenScaleFactorTemp;
         private MSAASamples m_msaaTemp;
         private bool m_useMipMapTemp;
-        //private static List<Camera> s_mirrorRenderingReflectionCamera = new List<Camera>();
 
-        private readonly int k_LeftReflectionProjectionMatrixID = Shader.PropertyToID("_LeftReflectionProjectionMatrix");
-        private readonly int k_RightReflectionProjectionMatrixID = Shader.PropertyToID("_RightReflectionProjectionMatrix");
-        private readonly int k_LeftReflectionTexID = Shader.PropertyToID("_LeftReflectionTex");
-        private readonly int k_RightReflectionTexID = Shader.PropertyToID("_RightReflectionTex");
-        //private readonly int k_FadeColorID = Shader.PropertyToID("_FadeColor");
+        private static readonly int k_LeftReflectionProjectionMatrixID = Shader.PropertyToID("_LeftReflectionProjectionMatrix");
+        private static readonly int k_RightReflectionProjectionMatrixID = Shader.PropertyToID("_RightReflectionProjectionMatrix");
+        private static readonly int k_LeftReflectionTexID = Shader.PropertyToID("_LeftReflectionTex");
+        private static readonly int k_RightReflectionTexID = Shader.PropertyToID("_RightReflectionTex");
         #endregion
 
         #region public field
         public float ScreenScaleFactor
         {
-            set => m_screenScaleFactor = value;
+            set => m_screenScaleFactor = Mathf.Clamp01(value);
             get => m_screenScaleFactor;
         }
         public MSAASamples MSAA
@@ -73,11 +70,17 @@ namespace FunS
         {
             get => m_isRendering;
         }
+        private Vector2Int GetUsageScreenSize
+        {
+            get => IsCameraXRUsage
+                ? new Vector2Int(XRSettings.eyeTextureWidth, XRSettings.eyeTextureHeight)
+                : new Vector2Int(Screen.width, Screen.height);
+        }
         public Vector2Int RenderingScreenSize
         {
             get
             {
-                Vector2Int usageSize = GetUsageScreenSize();
+                Vector2Int usageSize = GetUsageScreenSize;
                 usageSize.x = (int)(m_screenScaleFactor * usageSize.x);
                 usageSize.y = (int)(m_screenScaleFactor * usageSize.y);
                 return usageSize;
@@ -97,20 +100,16 @@ namespace FunS
         }
         private IEnumerator WaitXRReady()
         {
-            while (RenderingScreenSize.x == 0) yield return null;
+            yield return new WaitWhile(() => RenderingScreenSize.x == 0);
             CreateReflectionCamera();
             CreateRefCameraRenderTexture();
             m_isReadyToRender = true;
         }
         private void OnDestroy()
         {
-            if (m_leftReflectionRenderTexture)
-                DestroyImmediate(m_leftReflectionRenderTexture);
-            if (m_rightReflectionRenderTexture)
-                DestroyImmediate(m_rightReflectionRenderTexture);
-
+            ReleaseRenderTexture();
             if (m_refCameraTrans)
-                DestroyImmediate(m_refCameraTrans.gameObject);
+                Destroy(m_refCameraTrans.gameObject);
         }
         private void OnEnable()
         {
@@ -119,14 +118,8 @@ namespace FunS
         private void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-            if (m_leftReflectionRenderTexture)
-                DestroyImmediate(m_leftReflectionRenderTexture);
-            m_leftReflectionRenderTexture = null;
-            if (m_rightReflectionRenderTexture)
-                DestroyImmediate(m_rightReflectionRenderTexture);
-            m_rightReflectionRenderTexture = null;
+            ReleaseRenderTexture();
             m_isRendering = false;
-            //s_mirrorRenderingReflectionCamera.Remove(m_refCamera);
         }
         private void OnBeginCameraRendering(ScriptableRenderContext SRC, Camera camera)
         {
@@ -146,20 +139,16 @@ namespace FunS
         #region protected method
         protected virtual bool IsRequireReady() =>
             m_refCamera != null
-            && m_refPlaneMaterial != null
-            && m_refPlane != null;
-        protected virtual bool ArrowRender()
-        {
-            return m_isReadyToRender
+            && m_refPlaneMaterial != null;
+        protected virtual bool ArrowRender() =>
+            m_isReadyToRender
                 //isFacing
                 && Vector3.Dot(GetPlaneNormal(), m_cameraTrans.forward) < 0f
                 //isVisible
                 && m_refPlane.isVisible;
-        }
         protected virtual Vector3 GetPlaneNormal() => -m_refPlaneTrans.forward;
         protected virtual void RenderReflection(ScriptableRenderContext SRC)
         {
-            Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, GetPlaneNormal());
 
             if (m_leftReflectionRenderTexture == null
                 || m_msaaTemp != m_msaa
@@ -184,34 +173,35 @@ namespace FunS
             Quaternion q = Quaternion.LookRotation(reflectionFwd, reflectionUp);
             m_refCameraTrans.rotation = q;
 
-            SetupReflectionCameraProp(m_camera);
+            MirrorReflectionCameraProp();
 
+            Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(m_refPlaneTrans.position, GetPlaneNormal());
             if (!IsCameraXRUsage)
             {
                 SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye.Mono, reflectionMatrix);
-                RenderReflectionCamera(SRC);
+                DoRenderReflectionCamera(SRC);
             }
             else
             {
                 SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye.Left, reflectionMatrix);
-                RenderReflectionCamera(SRC);
+                DoRenderReflectionCamera(SRC);
                 SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye.Right, reflectionMatrix);
-                RenderReflectionCamera(SRC);
+                DoRenderReflectionCamera(SRC);
             }
         }
-        protected virtual void SetupReflectionCameraProp(Camera src)
+        protected virtual void MirrorReflectionCameraProp()
         {
-            m_refCamera.clearFlags = src.clearFlags;
-            m_refCamera.backgroundColor = src.backgroundColor;
-            m_refCamera.aspect = src.aspect;
+            m_refCamera.clearFlags = m_camera.clearFlags;
+            m_refCamera.backgroundColor = m_camera.backgroundColor;
+            m_refCamera.aspect = m_camera.aspect;
             //m_refCamera.nearClipPlane = Mathf.Max(m_camera.nearClipPlane, 0.1f);
             //m_refCamera.farClipPlane = m_distance;
             //Deselect masks in src that are not selected in dst.
-            m_mirrorRenderCullingMask &= src.cullingMask;
+            m_mirrorRenderCullingMask &= m_camera.cullingMask;
             m_refCamera.cullingMask = m_mirrorRenderCullingMask;
 
-            m_refCamera.orthographic = src.orthographic;
-            m_refCamera.orthographicSize = src.orthographicSize;
+            m_refCamera.orthographic = m_camera.orthographic;
+            m_refCamera.orthographicSize = m_camera.orthographicSize;
             //m_refCamera.allowMSAA
             m_refCameraUrpData.renderShadows = m_useShadow;
         }
@@ -243,53 +233,69 @@ namespace FunS
                 m_refPlaneMaterial.SetTexture(k_RightReflectionTexID, m_rightReflectionRenderTexture);
             }
         }
-        private void CreateRenderTexture(Camera.StereoscopicEye stereoscopicEye)
+        private void CreateRenderTexture(Camera.StereoscopicEye eyeTargetRT)
         {
             //Mono,Left = LeftTex,Right = RightTex
-            ref RenderTexture targetRT = ref stereoscopicEye == Camera.StereoscopicEye.Right
+            ref RenderTexture RT = ref (eyeTargetRT == Camera.StereoscopicEye.Right
                 ? ref m_rightReflectionRenderTexture
-                : ref m_leftReflectionRenderTexture;
+                : ref m_leftReflectionRenderTexture);
 
             Vector2Int size = RenderingScreenSize;
 
-            bool recreate = targetRT == null || targetRT.antiAliasing != (int)m_msaa;
-            if (recreate)
+            if (RT == null || RT.antiAliasing != (int)m_msaa)
             {
-                if (targetRT) DestroyImmediate(targetRT);
-                targetRT = new RenderTexture(size.x, size.y, 0, RenderTextureFormat.Default);
+                //ReCreate One
+                if (RT)
+                    DestroyImmediate(RT);
+
+                RT = new RenderTexture(size.x, size.y, 0, RenderTextureFormat.Default);
             }
-            else if (targetRT.height != size.y || targetRT.width != size.x)
+            else if (RT.height != size.y || RT.width != size.x)
             {
-                targetRT.Release();
-                targetRT.height = size.y;
-                targetRT.width = size.x;
+                //ReSize
+                RT.Release();
+                RT.height = size.y;
+                RT.width = size.x;
             }
 
-            targetRT.antiAliasing = (int)m_msaa;
-            targetRT.anisoLevel = 0;
+            RT.antiAliasing = (int)m_msaa;
+            RT.anisoLevel = 0;
             if (m_msaa == MSAASamples.None)
             {
-                targetRT.depth = 16;
+                RT.depth = 16;
             }
 
-            if (!targetRT.IsCreated())
-                targetRT.Create();
+            if (!RT.IsCreated())
+                RT.Create();
 
-            targetRT.name = $"[RefCam]{name} {(stereoscopicEye == Camera.StereoscopicEye.Left ? "Left" : "Right")}:{this.GetInstanceID()}";
+            RT.name = $"[RefCam]{name} {(eyeTargetRT == Camera.StereoscopicEye.Left ? "Left" : "Right")}:{this.GetInstanceID()}";
         }
-        private void SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye eye, Matrix4x4 reflectionMatrix)
+        private void ReleaseRenderTexture()
         {
-            bool isMono = eye == Camera.MonoOrStereoscopicEye.Mono;
+            if (m_leftReflectionRenderTexture)
+            {
+                DestroyImmediate(m_leftReflectionRenderTexture);
+                m_leftReflectionRenderTexture = null;
+            }
+            if (m_rightReflectionRenderTexture)
+            {
+                DestroyImmediate(m_rightReflectionRenderTexture);
+                m_rightReflectionRenderTexture = null;
+            }
+        }
+        private void SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye eyeTargetRT, Matrix4x4 reflectionMatrix)
+        {
+            bool isMono = eyeTargetRT == Camera.MonoOrStereoscopicEye.Mono;
 
             //https://github.com/eventlab-projects/com.quickvr.quickbase/blob/ad510ec90049e463eb897da65459fa65630d4e54/Runtime/QuickMirror/QuickMirrorReflection_v2.cs#L141
-            m_refCamera.worldToCameraMatrix = isMono ? m_camera.worldToCameraMatrix : m_camera.GetStereoViewMatrix((Camera.StereoscopicEye)eye);
+            m_refCamera.worldToCameraMatrix = isMono ? m_camera.worldToCameraMatrix : m_camera.GetStereoViewMatrix((Camera.StereoscopicEye)eyeTargetRT);
             m_refCamera.worldToCameraMatrix *= reflectionMatrix;
 
-            m_refCamera.projectionMatrix = isMono ? m_camera.projectionMatrix : m_camera.GetStereoProjectionMatrix((Camera.StereoscopicEye)eye);
+            m_refCamera.projectionMatrix = isMono ? m_camera.projectionMatrix : m_camera.GetStereoProjectionMatrix((Camera.StereoscopicEye)eyeTargetRT);
             Vector4 clipPlane = CameraSpacePlane(m_refCamera.worldToCameraMatrix, m_refPlaneTrans.position, GetPlaneNormal());
             m_refCamera.projectionMatrix = m_refCamera.CalculateObliqueMatrix(clipPlane);
 
-            if (eye != Camera.MonoOrStereoscopicEye.Right)
+            if (eyeTargetRT != Camera.MonoOrStereoscopicEye.Right)
             {
                 m_refCamera.targetTexture = m_leftReflectionRenderTexture;
                 m_refPlaneMaterial.SetMatrix(k_LeftReflectionProjectionMatrixID, m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix);
@@ -300,17 +306,11 @@ namespace FunS
                 m_refPlaneMaterial.SetMatrix(k_RightReflectionProjectionMatrixID, m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix);
             }
         }
-        private void RenderReflectionCamera(ScriptableRenderContext SRC)
+        private void DoRenderReflectionCamera(ScriptableRenderContext SRC)
         {
             GL.invertCulling = true;
             UniversalRenderPipeline.RenderSingleCamera(SRC, m_refCamera);
             GL.invertCulling = false;
-        }
-        private Vector2Int GetUsageScreenSize()
-        {
-            return IsCameraXRUsage
-                ? new Vector2Int(XRSettings.eyeTextureWidth, XRSettings.eyeTextureHeight)
-                : new Vector2Int(Screen.width, Screen.height);
         }
         //https://danielilett.com/2019-12-18-tut4-3-matrix-matching/
         private Vector4 CameraSpacePlane(Matrix4x4 worldToCameraMatrix, Vector3 pos, Vector3 normal)
