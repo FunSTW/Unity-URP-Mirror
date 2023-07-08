@@ -1,6 +1,8 @@
- 🚧URP-Mirror
+# URP-Mirror
+
 ✨ Mirror in URP. For VR Single-Pass-Instanced Rendering.  
-✒️ VR MultiPass is currently not supported, but there may be future updates to include it.
+
+🛠️ VR MultiPass is currently not supported, but there may be future updates to include it.
   
  \- | all-in-one VR Device | Support
 ----------|---------|----------
