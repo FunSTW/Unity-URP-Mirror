@@ -1,7 +1,6 @@
-# 🚧URP-Mirror🚧
-🚧WIP🚧     
-✨ Mirror in URP. Support VR Single-Pass-Instanced Rendering.   
-✒️ MultPass is temporarily not supported, fixing in progress
+ 🚧URP-Mirror
+✨ Mirror in URP. For VR Single-Pass-Instanced Rendering.  
+✒️ VR MultiPass is currently not supported, but there may be future updates to include it.
   
  \- | all-in-one VR Device | Support
 ----------|---------|----------
@@ -14,10 +13,8 @@
   
 # TODO 
 - The reflection camera does not correctly render in Single-Pass-Instanced, it uses a two-time rendering like MuiltPass. see [bug](#bug-tracking)
-- MultPass-rendering not render corrertly.
 - Shaderlab is invisible in PC platform.
 - CullingMatrix
-- Disable mutual recursion with reflective cameras
 
 # Reference
 - https://github.com/eventlab-projects/com.quickvr.quickbase/tree/58f6677a122678e123785097b99994080b767866/Runtime/QuickMirror
