@@ -14,12 +14,9 @@
   https://user-images.githubusercontent.com/45548858/231923238-ac356498-1917-4987-86ad-73e517d4b5cf.mp4
   
 # TODO 
-- The reflection camera does not correctly render in Single-Pass-Instanced, it uses a two-time rendering like MuiltPass. see [bug](#bug-tracking)
+- The reflection camera does not correctly render in Single-Pass-Instanced, it uses a two-time rendering like MuiltPass. see [bug](https://issuetracker.unity3d.com/issues/xrsdk-urp-camera-with-a-rendertexture-does-not-render-in-stereo-in-spi-slash-multiview)
 - Shaderlab is invisible in PC platform.
 - CullingMatrix
 
 # Reference
 - https://github.com/eventlab-projects/com.quickvr.quickbase/tree/58f6677a122678e123785097b99994080b767866/Runtime/QuickMirror
-
-# Bug Tracking
-- [Single-Pass-Instanced Rendering RenderTexture issue](https://issuetracker.unity3d.com/issues/xrsdk-urp-camera-with-a-rendertexture-does-not-render-in-stereo-in-spi-slash-multiview)
