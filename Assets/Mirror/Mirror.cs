@@ -3,7 +3,6 @@ using UnityEngine.XR;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using System.Collections;
-using System.Collections.Generic;
 
 namespace FunS
 {
@@ -100,6 +99,7 @@ namespace FunS
         }
         private IEnumerator WaitXRReady()
         {
+            //"XRSettings.eyeTexture Width Height" may be 0 in the first frame.
             yield return new WaitWhile(() => RenderingScreenSize.x == 0);
             CreateReflectionCamera();
             CreateRefCameraRenderTexture();
@@ -248,7 +248,7 @@ namespace FunS
                 if (RT)
                     DestroyImmediate(RT);
 
-                RT = new RenderTexture(size.x, size.y, 0, RenderTextureFormat.Default);
+                RT = new RenderTexture(size.x, size.y, 16, RenderTextureFormat.Default);
             }
             else if (RT.height != size.y || RT.width != size.x)
             {
@@ -260,10 +260,6 @@ namespace FunS
 
             RT.antiAliasing = (int)m_msaa;
             RT.anisoLevel = 0;
-            if (m_msaa == MSAASamples.None)
-            {
-                RT.depth = 16;
-            }
 
             if (!RT.IsCreated())
                 RT.Create();
