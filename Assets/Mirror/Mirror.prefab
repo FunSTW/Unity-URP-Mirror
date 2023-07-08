@@ -133,6 +133,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 19
   m_screenScaleFactor: 0.5
-  m_useShadow: 0
   m_msaa: 4
+  m_renderShadows: 0
+  m_fadeOutStart: 3
+  m_fadeOutEnd: 3.5
   m_refPlane: {fileID: 6009394801340436980}

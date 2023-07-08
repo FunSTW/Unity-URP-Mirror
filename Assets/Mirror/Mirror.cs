@@ -3,6 +3,7 @@ using UnityEngine.XR;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using System.Collections;
+using Unity.XR.CoreUtils;
 
 namespace FunS
 {
@@ -15,7 +16,9 @@ namespace FunS
         [SerializeField, Range(0.1f, 1.0f)] private float m_screenScaleFactor = 0.5f;
         //[SerializeField, Range(0.3f, 100f)] private float m_distance = 10f;
         [SerializeField] private MSAASamples m_msaa = MSAASamples.MSAA4x;
-        [SerializeField] private bool m_useShadow;
+        [SerializeField] private bool m_renderShadows;
+        [Header("LOD")]
+        [SerializeField] private Vector2 m_fadeOutStartEnd = new Vector2(5.0f, 6.0f);
 
         [Header("Require")]
         [SerializeField] private MeshRenderer m_refPlane;
@@ -39,6 +42,8 @@ namespace FunS
         private static readonly int k_RightReflectionProjectionMatrixID = Shader.PropertyToID("_RightReflectionProjectionMatrix");
         private static readonly int k_LeftReflectionTexID = Shader.PropertyToID("_LeftReflectionTex");
         private static readonly int k_RightReflectionTexID = Shader.PropertyToID("_RightReflectionTex");
+        private static readonly int k_FadeOutStartID = Shader.PropertyToID("_FadeOutStart");
+        private static readonly int k_FadeOutEndID = Shader.PropertyToID("_FadeOutEnd");
         #endregion
 
         #region public field
@@ -54,8 +59,8 @@ namespace FunS
         }
         public bool UseShadow
         {
-            set => m_useShadow = value;
-            get => m_useShadow;
+            set => m_renderShadows = value;
+            get => m_renderShadows;
         }
         public virtual bool IsCameraXRUsage
         {
@@ -85,6 +90,8 @@ namespace FunS
                 return usageSize;
             }
         }
+        public Matrix4x4 LeftEyeMVP { private set; get; }
+        public Matrix4x4 RightEyeMVP { private set; get; }
         #endregion
 
         #region mono
@@ -142,14 +149,15 @@ namespace FunS
             && m_refPlaneMaterial != null;
         protected virtual bool ArrowRender() =>
             m_isReadyToRender
-                //isFacing
+                //is facing
                 && Vector3.Dot(GetPlaneNormal(), m_cameraTrans.forward) < 0f
-                //isVisible
-                && m_refPlane.isVisible;
+                //is visible
+                && m_refPlane.isVisible
+                //not completely faded out
+                && m_fadeOutStartEnd.y * m_fadeOutStartEnd.y > Vector3.SqrMagnitude(m_cameraTrans.position - m_refPlaneTrans.position);
         protected virtual Vector3 GetPlaneNormal() => -m_refPlaneTrans.forward;
         protected virtual void RenderReflection(ScriptableRenderContext SRC)
         {
-
             if (m_leftReflectionRenderTexture == null
                 || m_msaaTemp != m_msaa
                 || m_screenScaleFactorTemp != m_screenScaleFactor)
@@ -164,7 +172,7 @@ namespace FunS
             /* Position */
             Vector3 camToPlane = m_cameraTrans.position - m_refPlaneTrans.position;
             Vector3 reflectionCamToPlane = Vector3.Reflect(camToPlane, GetPlaneNormal());
-            Vector3 camPosRS = transform.position + reflectionCamToPlane;
+            Vector3 camPosRS = m_refPlaneTrans.position + reflectionCamToPlane;
             m_refCameraTrans.position = camPosRS;
 
             /* Rotation */
@@ -188,6 +196,8 @@ namespace FunS
                 SetupReflectionCameraMatrix(Camera.MonoOrStereoscopicEye.Right, reflectionMatrix);
                 DoRenderReflectionCamera(SRC);
             }
+
+            SetupReflectionMaterial();
         }
         protected virtual void MirrorReflectionCameraProp()
         {
@@ -203,7 +213,7 @@ namespace FunS
             m_refCamera.orthographic = m_camera.orthographic;
             m_refCamera.orthographicSize = m_camera.orthographicSize;
             //m_refCamera.allowMSAA
-            m_refCameraUrpData.renderShadows = m_useShadow;
+            m_refCameraUrpData.renderShadows = m_renderShadows;
         }
         #endregion
 
@@ -225,13 +235,8 @@ namespace FunS
         private void CreateRefCameraRenderTexture()
         {
             CreateRenderTexture(Camera.StereoscopicEye.Left);
-            m_refPlaneMaterial.SetTexture(k_LeftReflectionTexID, m_leftReflectionRenderTexture);
-
             if (IsCameraXRUsage)
-            {
                 CreateRenderTexture(Camera.StereoscopicEye.Right);
-                m_refPlaneMaterial.SetTexture(k_RightReflectionTexID, m_rightReflectionRenderTexture);
-            }
         }
         private void CreateRenderTexture(Camera.StereoscopicEye eyeTargetRT)
         {
@@ -294,12 +299,25 @@ namespace FunS
             if (eyeTargetRT != Camera.MonoOrStereoscopicEye.Right)
             {
                 m_refCamera.targetTexture = m_leftReflectionRenderTexture;
-                m_refPlaneMaterial.SetMatrix(k_LeftReflectionProjectionMatrixID, m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix);
+                LeftEyeMVP = m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix;
             }
             else
             {
                 m_refCamera.targetTexture = m_rightReflectionRenderTexture;
-                m_refPlaneMaterial.SetMatrix(k_RightReflectionProjectionMatrixID, m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix);
+                RightEyeMVP = m_refCamera.projectionMatrix * m_refCamera.worldToCameraMatrix;
+            }
+        }
+        private void SetupReflectionMaterial()
+        {
+            m_refPlaneMaterial.SetMatrix(k_LeftReflectionProjectionMatrixID, LeftEyeMVP);
+            m_refPlaneMaterial.SetTexture(k_LeftReflectionTexID, m_leftReflectionRenderTexture);
+            m_refPlaneMaterial.SetFloat(k_FadeOutStartID, m_fadeOutStartEnd.x);
+            m_refPlaneMaterial.SetFloat(k_FadeOutEndID, m_fadeOutStartEnd.y);
+
+            if (IsCameraXRUsage)
+            {
+                m_refPlaneMaterial.SetMatrix(k_RightReflectionProjectionMatrixID, RightEyeMVP);
+                m_refPlaneMaterial.SetTexture(k_RightReflectionTexID, m_rightReflectionRenderTexture);
             }
         }
         private void DoRenderReflectionCamera(ScriptableRenderContext SRC)

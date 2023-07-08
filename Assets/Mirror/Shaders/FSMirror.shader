@@ -36,6 +36,9 @@ Shader "FunS/Mirror-Base" {
             float4x4 _LeftReflectionProjectionMatrix;
             sampler2D _RightReflectionTex;
             float4x4 _RightReflectionProjectionMatrix;
+
+            float _FadeOutStart = 0;
+            float _FadeOutEnd = 1000000;
             CBUFFER_END
 
             half2 CheckPlatformUV(half2 uv) {
@@ -67,8 +70,9 @@ Shader "FunS/Mirror-Base" {
                 GetMirrorUV_FragInput_float(IN.refPosCS, uv);
                 
                 output = SampleMirrorTex(_LeftReflectionTex, _RightReflectionTex, uv);
+                output.rgb = ApplyFadeOut(output.rgb, _FadeOutStart, _FadeOutEnd);
                 output.rgb = MixFog(output.rgb, IN.fogCoord);
-
+                 
                 return output;
             }
             ENDHLSL

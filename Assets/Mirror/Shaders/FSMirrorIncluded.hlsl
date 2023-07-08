@@ -31,6 +31,14 @@ void GetMirrorUV_FragInput_float(float4 posSS, out float2 uv) {
     CheckPlatformUV(uv);
 }
 
+float3 ApplyFadeOut(float3 color, float start, float end) {
+    float depth = distance(unity_ObjectToWorld._m03_m13_m23, _WorldSpaceCameraPos);
+    return lerp(color, 1, smoothstep(start, end, depth));
+}
+void ApplyFadeOut_float(float3 input, float start, float end, out float3 output) {
+    output = ApplyFadeOut(input, start, end);
+}
+
 
 half4 SampleMirrorTex(sampler2D lTex, sampler2D rTex, float2 uv) {
     #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
@@ -55,4 +63,4 @@ void SampleMirrorTex_float(UnityTexture2D lTex, UnityTexture2D rTex, float2 uv, 
     #endif
 }
 
-#endif //FSMIRRORSGINCLUDED_INCLUDED
+#endif //FSMIRRORSGINCLUDED_INCL
