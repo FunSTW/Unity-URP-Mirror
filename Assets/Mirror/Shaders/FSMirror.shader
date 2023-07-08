@@ -67,6 +67,8 @@ Shader "FunS/Mirror-Base" {
                 GetMirrorUV_FragInput_float(IN.refPosCS, uv);
                 
                 output = SampleMirrorTex(_LeftReflectionTex, _RightReflectionTex, uv);
+                output.rgb = MixFog(output.rgb, IN.fogCoord);
+
                 return output;
             }
             ENDHLSL
